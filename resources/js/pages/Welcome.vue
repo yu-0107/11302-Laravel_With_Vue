@@ -1,18 +1,41 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link ,useForm,router} from '@inertiajs/vue3';
 import { ref,reactive } from 'vue';
+import axios from 'axios';
+
+
+const props=defineProps({
+    events:Array,
+});
 
 const event=ref('');
-const events=reactive(new Array());
+//const events=reactive(new Array());
 let editText=ref('');
+
+const createEvent=useForm({
+    event:'',
+});
+
 const showInput=reactive(new Array());
 const addEvent=()=>{
-    events.push(event.value);
-    event.value='';
-    showInput.push(false);
-    //console.log(events);
+     createEvent.event=event.value;
+     createEvent.post('/event',{
+            onSuccess:()=>{
+                event.value='';
+            }
+     });
+/*     axios.post('/event',{event:event.value})
+    .then((res)=>{
+        events.push(event.value);
+        event.value='';
+        showInput.push(false);    
+        console.log(res.data);
+    }).catch(err=>console.log(err)); */
+    
+   // console.log(showInput);
 }
 const save=(idx)=>{
+    //events.splice(idx,1,editText.value);
     events[idx]=editText.value;
     editText.value='';
     showInput.fill(false);
@@ -21,9 +44,16 @@ const edit=(idx)=>{
     editText.value=events[idx];
     showInput.fill(false);
     showInput[idx]=true;
+    //console.log(showInput);
+    //events.splice(idx,1,editText.value);
+    //editText.value='';
 }
-const del=(idx)=>{
-    events.splice(idx,1);
+const del=(id)=>{
+    axios.delete(`/event/${id}`)
+    .then((res)=>{
+        //console.log(res.data);
+        router.reload();
+    }).catch(err=>console.log(err));
 }
 
 </script>
@@ -74,17 +104,17 @@ const del=(idx)=>{
             <h3 class='text-center w-full text-2xl '>待辦事項清單</h3>
             <div id="lists" class="w-full p-4">
                 <div  class="w-full flex justify-between"
-                    v-for="event,idx in events" :key="idx">
+                    v-for="event,idx in props.events" :key="idx">
                    <div v-if="!showInput[idx]">
-                    {{idx+1}}. {{event}}
+                    {{idx+1}}. {{event.event}}
                    </div> 
                    <div v-else="showInput[idx]">
-                    {{ idx+1 }}. <input type="text" v-model="editText" class="border border-gray-500 p-2 mx-2">
+                    {{idx+1}}. <input type="text" v-model="editText"  class="border border-gray-500 p-2 mx-2">
                    </div>
                    <div>
-                      <button class="btn btn-yellow" v-if="!showInput[idx]" @click="edit(idx)">編輯</button>
+                      <button class="btn btn-yellow" v-if="!showInput[idx]"  @click="edit(idx)">編輯</button>
                       <button class="btn btn-blue" v-if="showInput[idx]" @click="save(idx)">更新</button>
-                      <button class="btn btn-red" @click="del(idx)">刪除</button>
+                      <button class="btn btn-red" @click="del(event.id)">刪除</button>
                    </div>
 
                 </div>
@@ -106,10 +136,10 @@ const del=(idx)=>{
 .btn-yellow{
     @apply bg-yellow-800 text-yellow-100
 }
-.btn-blue{
-    @apply bg-blue-200 text-blue-800
-}
 .btn-red{
     @apply bg-red-200 text-red-800
+}
+.btn-blue{
+    @apply bg-blue-200 text-blue-800
 }
 </style>
